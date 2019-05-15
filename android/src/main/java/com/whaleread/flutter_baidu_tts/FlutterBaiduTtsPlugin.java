@@ -74,6 +74,12 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
             if (tts == null) {
                 throw new IllegalStateException("TTS not initialized!");
             }
+            if(call.method.equals("destroy")) {
+                tts.destroy();
+                tts = null;
+                result.success(1);
+                return;
+            }
             tts.onMethodCall(call, result);
         }
     }
@@ -91,7 +97,7 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
                 Manifest.permission.MODIFY_AUDIO_SETTINGS,
 //              Manifest.permission.WRITE_EXTERNAL_STORAGE,
 //              Manifest.permission.WRITE_SETTINGS,
-                Manifest.permission.READ_PHONE_STATE,
+//              Manifest.permission.READ_PHONE_STATE,
                 Manifest.permission.ACCESS_WIFI_STATE,
 //              Manifest.permission.CHANGE_WIFI_STATE
         };
@@ -127,6 +133,7 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
             if(hasAllPermissionsGranted(grantResults)) {
                 initTts();
             } else {
+                initTts();
                 methodChannel.invokeMethod("onRequestPermissionsFailed", null);
             }
             return true;

@@ -35,7 +35,6 @@ class SpeakingWidget extends StatefulWidget {
 }
 
 class SpeakingWidgetState extends State<SpeakingWidget> {
-  FlutterBaiduTts _tts;
   TextEditingController _appIdController;
   TextEditingController _appKeyController;
   TextEditingController _secretKeyController;
@@ -93,7 +92,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
 
   @override
   void dispose() {
-    _tts?.destroy();
+    FlutterBaiduTts.destroy();
     super.dispose();
   }
 
@@ -129,8 +128,8 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
     if (engineType == 'mix') {
       await prepareModels();
     }
-    _tts = FlutterBaiduTts(ttsEventHandler: _handleTtsEvent);
-    return _tts.init(appId, appKey, secretKey, textModelPath, speechModelPath,
+    FlutterBaiduTts.ttsEventHandler = _handleTtsEvent;
+    return FlutterBaiduTts.init(appId, appKey, secretKey, textModelPath, speechModelPath,
         engineType: engineType);
   }
 
@@ -200,14 +199,14 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
   }
 
   void _setOfflineSpeaker(String value) async {
-    await _tts.setParams(offlineSpeaker: value);
+    await FlutterBaiduTts.setParams(offlineSpeaker: value);
     setState(() {
       offlineSpeaker = value;
     });
   }
 
   void _setOnlineSpeaker(String value) async {
-    await _tts.setParams(onlineSpeaker: value);
+    await FlutterBaiduTts.setParams(onlineSpeaker: value);
     setState(() {
       onlineSpeaker = value;
     });
@@ -220,25 +219,25 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
   }
 
   void pauseSpeaking() async {
-    await _tts.pause();
+    await FlutterBaiduTts.pause();
     setState(() {
       speakingState = 2;
     });
   }
 
   void resumeSpeaking() async {
-    await _tts.resume();
+    await FlutterBaiduTts.resume();
     setState(() {
       speakingState = 1;
     });
   }
 
   void stopSpeaking() async {
-    await _tts.stop();
+    await FlutterBaiduTts.stop();
   }
 
   void startSpeaking() async {
-    if (_tts == null) {
+    if (FlutterBaiduTts == null) {
       return;
     }
     String texts = _textController.text;
@@ -249,7 +248,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
       this.textIndex = 0;
       this.beginPos = 0;
       this.endPos = 0;
-      _tts.batchSpeak(this.texts);
+      FlutterBaiduTts.batchSpeak(this.texts);
     }
   }
 
@@ -284,7 +283,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
   }
 
   void clearParams() {
-    _tts.clearParams();
+    FlutterBaiduTts.clearParams();
   }
 
   Widget speakingBtn() {
@@ -474,7 +473,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                         setState(() {
                           speed = value.toInt();
                         });
-                        _tts.setParams(speed: speed);
+                        FlutterBaiduTts.setParams(speed: speed);
                       }),
                 ),
               ],
@@ -494,7 +493,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                         setState(() {
                           pitch = value.toInt();
                         });
-                        _tts.setParams(pitch: pitch);
+                        FlutterBaiduTts.setParams(pitch: pitch);
                       }),
                 ),
               ],
@@ -514,7 +513,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                         setState(() {
                           volume = value.toInt();
                         });
-                        _tts.setParams(volume: value.toInt());
+                        FlutterBaiduTts.setParams(volume: value.toInt());
                       }),
                 ),
               ],
@@ -528,7 +527,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                     : IconButton(
                         icon: Icon(Icons.stop),
                         onPressed: () {
-                          _tts.stop().then((_) => _resetProgress());
+                          FlutterBaiduTts.stop().then((_) => _resetProgress());
                         },
                       ),
                 speakingBtn(),

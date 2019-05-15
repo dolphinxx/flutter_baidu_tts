@@ -54,18 +54,12 @@ class FlutterBaiduTts {
   static const String mixModeHighSpeedSynthesize = 'MIX_MODE_HIGH_SPEED_SYNTHESIZE';
   /// 同 MIX_MODE_DEFAULT。 但是连接百度服务器超时1.2s后，自动切换离线合成引擎
   static const String mixModeHighSpeedSynthesizeWifi = 'MIX_MODE_HIGH_SPEED_SYNTHESIZE_WIFI';
-  static MethodChannel _channel;
-  final TtsEventHandler ttsEventHandler;
+  static MethodChannel _channel = const MethodChannel('com.whaleread.flutter_baidu_tts')..setMethodCallHandler(_handleMethodCall);
+  static TtsEventHandler _ttsEventHandler;
+  static set ttsEventHandler(handler) => _ttsEventHandler = handler;
 
-  FlutterBaiduTts({this.ttsEventHandler}) {
-    if (_channel == null) {
-      _channel = const MethodChannel('com.whaleread.flutter_baidu_tts');
-      _channel.setMethodCallHandler(_handleMethodCall);
-    }
-  }
-
-  Future<void> _handleMethodCall(MethodCall call) async {
-    if (ttsEventHandler == null) {
+  static Future<void> _handleMethodCall(MethodCall call) async {
+    if (_ttsEventHandler == null) {
       return;
     }
     TtsEvent event;
@@ -104,7 +98,7 @@ class FlutterBaiduTts {
         event = TtsEvent.onError;
         break;
     }
-    ttsEventHandler(event, call.arguments);
+    _ttsEventHandler(event, call.arguments);
   }
 
   ///
@@ -126,7 +120,7 @@ class FlutterBaiduTts {
   /// [notifyProgress] 是否通知合成及播放进度, default `true`
   ///
   /// [audioFocus] 是否请求安卓Audio Focus, default `true`
-  Future<dynamic> init(String appId, String appKey, String secretKey,
+  static Future<dynamic> init(String appId, String appKey, String secretKey,
       String textModelPath, List<String> speechModelPath,
       {String engineType: 'mix', bool notifyProgress: true, bool audioFocus: true,}) async {
     return await _channel.invokeMethod('init', {
@@ -154,7 +148,7 @@ class FlutterBaiduTts {
   ///
   /// [mixMode] 控制何种网络状况切换到离线。 SDK没有纯离线功能，强制在线优先。
   ///
-  Future<dynamic> setParams({
+  static Future<dynamic> setParams({
     String onlineSpeaker,
     String offlineSpeaker,
     int speed,
@@ -184,31 +178,31 @@ class FlutterBaiduTts {
     return await _channel.invokeMethod('setParams', params);
   }
 
-  Future<dynamic> clearParams() async {
+  static Future<dynamic> clearParams() async {
     return await _channel.invokeMethod('clearParams');
   }
 
-  Future<dynamic> speak(String texts) async {
+  static Future<dynamic> speak(String texts) async {
     return await _channel.invokeMethod('speak', texts);
   }
 
-  Future<dynamic> batchSpeak(List<String> texts) async {
+  static Future<dynamic> batchSpeak(List<String> texts) async {
     return await _channel.invokeMethod('batchSpeak', texts);
   }
 
-  Future<dynamic> pause() async {
+  static Future<dynamic> pause() async {
     return await _channel.invokeMethod('pause');
   }
 
-  Future<dynamic> stop() async {
+  static Future<dynamic> stop() async {
     return await _channel.invokeMethod('stop');
   }
 
-  Future<dynamic> resume() async {
+  static Future<dynamic> resume() async {
     return await _channel.invokeMethod('resume');
   }
 
-  Future<dynamic> destroy() async {
+  static Future<dynamic> destroy() async {
     return await _channel.invokeMethod('destroy');
   }
 }
