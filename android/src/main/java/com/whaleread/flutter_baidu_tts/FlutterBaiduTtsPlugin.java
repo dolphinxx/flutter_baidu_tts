@@ -123,10 +123,13 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
 
     @Override
     public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == 1025 && hasAllPermissionsGranted(grantResults)) {
-            initTts();
-        } else {
-            methodChannel.invokeMethod("onRequestPermissionsFailed", null);
+        if (requestCode == 1025) {
+            if(hasAllPermissionsGranted(grantResults)) {
+                initTts();
+            } else {
+                methodChannel.invokeMethod("onRequestPermissionsFailed", null);
+            }
+            return true;
         }
         return true;
     }
