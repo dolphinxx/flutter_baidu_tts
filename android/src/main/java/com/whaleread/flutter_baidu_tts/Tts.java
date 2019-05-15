@@ -346,7 +346,10 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
     }
 
     private int pause() {
-        return mSpeechSynthesizer.pause();
+        if (mSpeechSynthesizer != null) {
+            return mSpeechSynthesizer.pause();
+        }
+        return 0;
     }
 
     private int resume() {
@@ -363,11 +366,17 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
     }
 
     private int doResume() {
-        return mSpeechSynthesizer.resume();
+        if (mSpeechSynthesizer != null) {
+            return mSpeechSynthesizer.resume();
+        }
+        return 0;
     }
 
     private int stop() {
-        return mSpeechSynthesizer.stop();
+        if (mSpeechSynthesizer != null) {
+            return mSpeechSynthesizer.stop();
+        }
+        return 0;
     }
 
     void destroy() {
