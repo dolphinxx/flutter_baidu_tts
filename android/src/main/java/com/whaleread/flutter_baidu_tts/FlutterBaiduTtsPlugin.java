@@ -4,11 +4,15 @@ import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.util.Log;
 
 import com.baidu.tts.client.TtsMode;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -116,9 +120,12 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
         if (toApplyList.isEmpty()) {
             initTts();
         } else {
-            registrar.activity().requestPermissions(toApplyList.toArray(lackPermissions), 1025);
+            _requestCode = Integer.parseInt(new SimpleDateFormat("MMddHHmmss", Locale.CHINA).format(new Date()));
+            registrar.activity().requestPermissions(toApplyList.toArray(lackPermissions), _requestCode);
         }
     }
+
+    private int _requestCode;
 
     private boolean hasAllPermissionsGranted(int[] grantResults) {
         for (int grantResult : grantResults) {
@@ -131,15 +138,16 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
 
     @Override
     public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == 1025) {
+		Log.d("FlutterBaiduTtsPlugin", "onRequestPermissionsResult " + requestCode);
+        if (requestCode == _requestCode) {
             if(hasAllPermissionsGranted(grantResults)) {
                 initTts();
             } else {
-                initTts();
+//                initTts();
                 methodChannel.invokeMethod("onRequestPermissionsFailed", null);
             }
             return true;
         }
-        return true;
+        return false;
     }
 }
