@@ -71,14 +71,16 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
             }
             result.success(1);
         } else {
+            if(call.method.equals("destroy")) {
+                if(tts != null) {
+                    tts.destroy();
+                    tts = null;
+                    result.success(1);
+                }
+                return;
+            }
             if (tts == null) {
                 throw new IllegalStateException("TTS not initialized!");
-            }
-            if(call.method.equals("destroy")) {
-                tts.destroy();
-                tts = null;
-                result.success(1);
-                return;
             }
             tts.onMethodCall(call, result);
         }
