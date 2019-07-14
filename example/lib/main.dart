@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
@@ -55,6 +56,13 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
     '4': '情感童声',
   };
 
+  final String androidAppId = '11005757';
+  final String androidAppKey = 'Ovcz19MGzIKoDDb3IsFFncG1';
+  final String androidSecretKey = 'e72ebb6d43387fc7f85205ca7e6706e2';
+  final String iosAppId = '';
+  final String iosAppKey = '';
+  final String iosSecretKey = '';
+
   String engineType = 'mix';
   String onlineSpeaker = '0';
   String offlineSpeaker = '0';
@@ -76,15 +84,38 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
 
   String textModelPath;
   List<String> speechModelPath;
+  String _textModelName;
+  List<String> _speechModelPaths;
+
+  List<int> _textIds;
 
   @override
   void initState() {
     super.initState();
-    _appIdController = TextEditingController()..text = '11005757';
-    _appKeyController = TextEditingController()
-      ..text = 'Ovcz19MGzIKoDDb3IsFFncG1';
-    _secretKeyController = TextEditingController()
-      ..text = 'e72ebb6d43387fc7f85205ca7e6706e2';
+    _appIdController = TextEditingController();
+    _appKeyController = TextEditingController();
+    _secretKeyController = TextEditingController();
+    _speechModelPaths = List(4);
+    if(defaultTargetPlatform == TargetPlatform.iOS) {
+      _appIdController.text = iosAppId;
+      _appKeyController.text = iosAppKey;
+      _secretKeyController.text = iosSecretKey;
+      _textModelName = 'Chinese_And_English_Text.dat';
+      _speechModelPaths[0] = 'Chinese_And_English_Speech_Male.dat';
+      _speechModelPaths[1] = 'Chinese_And_English_Speech_Female.dat';
+      _speechModelPaths[2] = 'Chinese_And_English_Speech_Male-yyjw.dat';
+      _speechModelPaths[3] = 'Chinese_And_English_Speech_DYY.dat';
+    } else {
+      _appIdController.text = androidAppId;
+      _appKeyController.text = androidAppKey;
+      _secretKeyController.text = androidSecretKey;
+      _textModelName = 'bd_etts_text.dat';
+      _speechModelPaths[0] = 'bd_etts_common_speech_f7_mand_eng_high_am-mix_v3.0.0_20170512.dat';
+      _speechModelPaths[1] = 'bd_etts_common_speech_m15_mand_eng_high_am-mix_v3.0.0_20170505.dat';
+      _speechModelPaths[2] = 'bd_etts_common_speech_yyjw_mand_eng_high_am-mix_v3.0.0_20170512.dat';
+      _speechModelPaths[3] = 'bd_etts_common_speech_as_mand_eng_high_am_v3.0.0_20170516.dat';
+    }
+
     _textController = TextEditingController(
         text:
             '''道可道，非常道；名可名，非常名。无名天地之始，有名万物之母。故常无欲，以观其妙；常有欲，以观其徼。此两者同出而异名，同谓之玄，玄之又玄，众妙之门。天下皆知美之为美，斯恶已；皆知善之为善，斯不善已。故有无相生，难易相成，长短相较，高下相倾，音声相和，前后相随。是以圣人处无为之事，行不言之教，万物作焉而不辞，生而不有，为而不恃，功成而弗居。夫唯弗居，是以不去。''');
@@ -99,16 +130,19 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
   Future<void> prepareModels() async {
     Directory directory = await getApplicationDocumentsDirectory();
     String basePath = '${directory.path}/baidu_tts';
-    textModelPath = await copyAssetFile(basePath, 'bd_etts_text.dat');
+    textModelPath = await copyAssetFile(basePath, _textModelName);
     speechModelPath = List();
     speechModelPath.add(await copyAssetFile(basePath,
-        'bd_etts_common_speech_f7_mand_eng_high_am-mix_v3.0.0_20170512.dat'));
+        _speechModelPaths[0]));
     speechModelPath.add(await copyAssetFile(basePath,
-        'bd_etts_common_speech_m15_mand_eng_high_am-mix_v3.0.0_20170505.dat'));
+        _speechModelPaths[1]));
     speechModelPath.add(await copyAssetFile(basePath,
-        'bd_etts_common_speech_yyjw_mand_eng_high_am-mix_v3.0.0_20170512.dat'));
+        _speechModelPaths[2]));
     speechModelPath.add(await copyAssetFile(basePath,
-        'bd_etts_common_speech_as_mand_eng_high_am_v3.0.0_20170516.dat'));
+        _speechModelPaths[3]));
+    print('-----------------------');
+    print(textModelPath);
+    print(speechModelPath.join('\n'));
   }
 
   Future<String> copyAssetFile(String basePath, String filename) async {
@@ -120,6 +154,8 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
     await dest.create(recursive: true);
     await dest.writeAsBytes(
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+    bool fileExists = await dest.exists();
+    print('---->$filename exists=$fileExists');
     return dest.path;
   }
 
@@ -145,9 +181,10 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
         });
         break;
       case TtsEvent.onSynthesizeDataArrived:
+        int textIndex = _textIds.indexOf(arguments[0]);
         setState(() {
-          bufferPercents[arguments[0]] =
-              arguments[1] / this.texts[arguments[0]].length;
+          bufferPercents[textIndex] =
+              arguments[1] / this.texts[textIndex].length;
         });
         break;
 //      case TtsEvent.onSynthesizeFinish:
@@ -156,14 +193,16 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
 //        });
 //        break;
       case TtsEvent.onSpeechProgressChanged:
+        int textIndex = _textIds.indexOf(arguments[0]);
         setState(() {
-          speakPercents[arguments[0]] =
-              arguments[1] / this.texts[arguments[0]].length;
+          speakPercents[textIndex] =
+              arguments[1] / this.texts[textIndex].length;
         });
         break;
       case TtsEvent.onSpeechStart:
         print('Tts event $event $arguments');
-        this.textIndex = arguments;
+        this.textIndex = _textIds.indexOf(arguments);
+        print(this.textIndex);
         setState(() {
           speakingState = 1;
           this.beginPos = this.endPos;
@@ -248,7 +287,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
       this.textIndex = 0;
       this.beginPos = 0;
       this.endPos = 0;
-      FlutterBaiduTts.batchSpeak(this.texts);
+      _textIds = await FlutterBaiduTts.batchSpeak(this.texts);
     }
   }
 

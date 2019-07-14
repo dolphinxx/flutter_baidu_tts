@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+//import 'package:flutter/foundation.dart';
 
 enum TtsEvent {
   /// arguments: init result
@@ -123,6 +124,10 @@ class FlutterBaiduTts {
   static Future<dynamic> init(String appId, String appKey, String secretKey,
       String textModelPath, List<String> speechModelPath,
       {String engineType: 'mix', bool notifyProgress: true, bool audioFocus: true,}) async {
+//    if(defaultTargetPlatform == TargetPlatform.iOS) {
+//      textModelPath = textModelPath.substring(textModelPath.indexOf('baidu_tts'));
+//      speechModelPath = speechModelPath.map((p) => p.substring(p.indexOf('baidu_tts'))).toList();
+//    }
     return await _channel.invokeMethod('init', {
       "appId": appId,
       "appKey": appKey,
@@ -186,8 +191,9 @@ class FlutterBaiduTts {
     return await _channel.invokeMethod('speak', texts);
   }
 
-  static Future<dynamic> batchSpeak(List<String> texts) async {
-    return await _channel.invokeMethod('batchSpeak', texts);
+  /// return List<int> No. for each text
+  static Future<List<int>> batchSpeak(List<String> texts) async {
+    return (await _channel.invokeMethod('batchSpeak', texts)).cast<int>();
   }
 
   static Future<dynamic> pause() async {

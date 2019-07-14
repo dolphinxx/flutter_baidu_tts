@@ -1,6 +1,7 @@
 name: flutter_baidu_tts_example
 description: Demonstrates how to use the flutter_baidu_tts plugin.
 publish_to: 'none'
+version: 1.0.0+1
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
@@ -43,6 +44,11 @@ flutter:
     - assets/bd_etts_common_speech_f7_mand_eng_high_am-mix_v3.0.0_20170512.dat
     - assets/bd_etts_common_speech_yyjw_mand_eng_high_am-mix_v3.0.0_20170512.dat
     - assets/bd_etts_common_speech_as_mand_eng_high_am_v3.0.0_20170516.dat
+    - assets/Chinese_And_English_Text.dat
+    - assets/Chinese_And_English_Speech_Male.dat
+    - assets/Chinese_And_English_Speech_Female.dat
+    - assets/Chinese_And_English_Speech_Male-yyjw.dat
+    - assets/Chinese_And_English_Speech_DYY.dat
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

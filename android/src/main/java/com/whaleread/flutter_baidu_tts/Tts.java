@@ -326,18 +326,21 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
      * @param texts 要合成的文本，每个文本不能大于1024个GBK字节，即512个汉字
      * @return 合成结果
      */
-    private int batchSpeak(List<String> texts) {
+    private List<Integer> batchSpeak(List<String> texts) {
         if(!hasAudioFocus && !requestAudioFocus()) {
-            return -1;
+            return new ArrayList<>();
         }
         List<SpeechSynthesizeBag> bags = new ArrayList<>();
+        List<Integer> result = new ArrayList<>(texts.size());
         for (int i = 0;i < texts.size();i++) {
             SpeechSynthesizeBag speechSynthesizeBag = new SpeechSynthesizeBag();
             speechSynthesizeBag.setText(texts.get(i));
             speechSynthesizeBag.setUtteranceId(String.valueOf(i));
             bags.add(speechSynthesizeBag);
+            result.add(i);
         }
-        return mSpeechSynthesizer.batchSpeak(bags);
+        mSpeechSynthesizer.batchSpeak(bags);
+        return result;
     }
 
     private void _pause() {

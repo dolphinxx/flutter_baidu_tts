@@ -15,7 +15,10 @@ A new Flutter plugin for Baidu TTS.
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-
+  s.vendored_libraries = 'lib/libBaiduSpeechSDK.a'
+  s.frameworks = 'GLKit', 'SystemConfiguration', 'AudioToolbox', 'AVFoundation', 'CFNetwork', 'CoreLocation', 'CoreTelephony'
+  s.library = 'sqlite3.0', 'iconv.2', 'c++', 'z.1'
+  s.requires_arc = true
   s.ios.deployment_target = '8.0'
 end
 
