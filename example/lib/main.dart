@@ -101,8 +101,8 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
       _appKeyController.text = iosAppKey;
       _secretKeyController.text = iosSecretKey;
       _textModelName = 'Chinese_And_English_Text.dat';
-      _speechModelPaths[0] = 'Chinese_And_English_Speech_Male.dat';
-      _speechModelPaths[1] = 'Chinese_And_English_Speech_Female.dat';
+      _speechModelPaths[0] = 'Chinese_And_English_Speech_Female.dat';
+      _speechModelPaths[1] = 'Chinese_And_English_Speech_Male.dat';
       _speechModelPaths[2] = 'Chinese_And_English_Speech_Male-yyjw.dat';
       _speechModelPaths[3] = 'Chinese_And_English_Speech_DYY.dat';
     } else {

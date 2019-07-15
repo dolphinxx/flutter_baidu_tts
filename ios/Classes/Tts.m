@@ -159,9 +159,8 @@ BOOL enableLog = NO;
  *
  **/
 - (void)loadModel:(NSInteger)model{
-    NSString* textFile = [documentsDirectory stringByAppendingPathComponent:_textFile];
-    NSString* speechFile = [documentsDirectory stringByAppendingPathComponent:_speechModelFiles[model]];
-    NSError* result = [[BDSSpeechSynthesizer sharedInstance] loadOfflineEngine:speechFile speechDataPath:textFile licenseFilePath:nil withAppCode:_appId];
+    NSString* speechFile = _speechModelFiles[model];
+    NSError* result = [[BDSSpeechSynthesizer sharedInstance] loadOfflineEngine:_textFile speechDataPath:speechFile licenseFilePath:nil withAppCode:_appId];
     if(result) {
         NSLog(@"loadModel result: %@", result);
     }
@@ -325,7 +324,7 @@ BOOL enableLog = NO;
                         speaking:(NSInteger)SpeakSentence
                     synthesizing:(NSInteger)SynthesizeSentence{
     NSLog(@"onError %@", error);
-    [_channel invokeMethod:@"onError" arguments:[NSArray arrayWithObjects: [NSNumber numberWithInteger:SpeakSentence], error.code, nil]];
+    [_channel invokeMethod:@"onError" arguments:[NSArray arrayWithObjects: [NSNumber numberWithInteger:SpeakSentence], [NSNumber numberWithInteger:error.code], nil]];
 }
 
 @end
