@@ -9,5 +9,5 @@ build/
 *.iml
 /.idea
 
-/ios/lib/libBaiduSpeechSDK.a
+#/ios/lib/libBaiduSpeechSDK.a
 /example/ios/.symlinks/
