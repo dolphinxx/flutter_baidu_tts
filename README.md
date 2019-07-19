@@ -4,11 +4,6 @@ A new Flutter plugin for Baidu TTS.
 
 ## Getting Started
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+For iOS, enable background audio to allow TTS speaking in background.
 
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+Select your app's target in Xcode, and select the Capabilities tab. Under the Capabilities tab, set the Background Modes switch to ON and select the "Audio, AirPlay, and Picture in Picture".

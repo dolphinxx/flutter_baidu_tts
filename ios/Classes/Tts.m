@@ -35,7 +35,9 @@ BOOL enableLog = NO;
     _appId = appId;
     // configure Online TTS
     [[BDSSpeechSynthesizer sharedInstance] setApiKey:appId withSecretKey:secretKey];
-    [[AVAudioSession sharedInstance]setCategory:AVAudioSessionCategorySoloAmbient error:nil];
+    [[AVAudioSession sharedInstance]setCategory:AVAudioSessionCategoryPlayback error:nil];
+    [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    [[BDSSpeechSynthesizer sharedInstance] setAudioSessionCategory:AVAudioSessionCategoryPlayback];
     
     
     // configure Offline TTS
