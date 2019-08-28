@@ -51,12 +51,16 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
     private static List<String> speechModelPath;
     private static boolean notifyProgress;
     private static boolean audioFocus;
+    private static boolean enableLog;
 
     @Override
     public void onMethodCall(MethodCall call, Result result) {
         if (call.method.equals("init")) {
             if (tts != null) {
                 tts.destroy();
+            }
+            if(call.hasArgument("enableLog")) {
+                enableLog = call.argument("enableLog");
             }
             appId = call.argument("appId");
             appKey = call.argument("appKey");
@@ -90,8 +94,19 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
         }
     }
 
+    private static TtsMode parseTtsMode(String mode) {
+        switch(mode) {
+            case "online":
+                return TtsMode.ONLINE;
+            case "offline":
+                return TtsMode.OFFLINE;
+            default:
+                return TtsMode.MIX;
+        }
+    }
+
     private void initTts() {
-        tts = new Tts(registrar, methodChannel, "online".equals(engineType) ? TtsMode.ONLINE : TtsMode.MIX, textModelPath, speechModelPath, notifyProgress, audioFocus);
+        tts = new Tts(registrar, methodChannel, parseTtsMode(engineType), textModelPath, speechModelPath, notifyProgress, audioFocus, enableLog);
         tts.init(appId, appKey, secretKey);
     }
 

@@ -25,7 +25,7 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.PluginRegistry;
 
 public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerListener {
-    private static final String TAG = "TTS";
+    private static final String TAG = "[BAIDU TTS]";
     private SpeechSynthesizer mSpeechSynthesizer;
 
 //    private static final String TEXT_FILENAME = "bd_etts_text.dat";
@@ -50,8 +50,9 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
     private AudioAttributes audioAttributes;
     private boolean autoResume = false;
     private boolean hasAudioFocus = false;
+    private boolean enableLog;
 
-    Tts(PluginRegistry.Registrar registrar, MethodChannel channel, TtsMode ttsMode, String textFile, List<String> speechModelFiles, boolean notifyProgress, boolean audioFocus) {
+    Tts(PluginRegistry.Registrar registrar, MethodChannel channel, TtsMode ttsMode, String textFile, List<String> speechModelFiles, boolean notifyProgress, boolean audioFocus, boolean enableLog) {
         this.registrar = registrar;
         this.channel = channel;
         this.ttsMode = ttsMode;
@@ -59,6 +60,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
         this.textFile = textFile;
         this.speechModelFiles = speechModelFiles;
         this.audioFocus = audioFocus;
+        this.enableLog = enableLog;
         if (audioFocus) {
             audioManager = (AudioManager) registrar.context().getSystemService(Context.AUDIO_SERVICE);
             onAudioFocusChangeListener = focusChange -> {
@@ -114,13 +116,13 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
         // 请替换为语音开发者平台上注册应用得到的App ID ,AppKey ，Secret Key ，填写在SynthActivity的开始位置
         int result = mSpeechSynthesizer.setAppId(appId);
         if (result != 0) {
-            Log.e(TAG, "set AppId result: " + result);
+            Log.e(TAG, "set AppId failed with result: " + result);
             channel.invokeMethod("onInitFailed", result);
             return;
         }
         result = mSpeechSynthesizer.setApiKey(appKey, secretKey);
         if (result != 0) {
-            Log.e(TAG, "set appKey result: " + result);
+            Log.e(TAG, "set appKey failed with result: " + result);
             channel.invokeMethod("onInitFailed", result);
             return;
         }
@@ -166,7 +168,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
         // 6. 初始化
         result = mSpeechSynthesizer.initTts(ttsMode);
         if (result != 0) {
-            Log.e(TAG, "initTts result: " + result);
+            Log.e(TAG, "initTts failed with result: " + result);
             channel.invokeMethod("onInitFailed", result);
             return;
         }
@@ -253,10 +255,12 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
      * 切换离线发音。注意需要添加额外的判断：引擎在合成时该方法不能调用
      */
     private void loadModel(int model) {
-        Log.d(TAG, "切换离线语音：" + model);
+        if(enableLog) {
+            Log.d(TAG, "切换离线语音：" + model);
+        }
         int result = mSpeechSynthesizer.loadModel(speechModelFiles.get(model), textFile);
         if (result != 0) {
-            Log.e(TAG, "load model result: " + result);
+            Log.e(TAG, "load model failed with result: " + result);
         }
     }
 
@@ -297,6 +301,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
      */
     private int speak(String texts) {
         if(!hasAudioFocus && !requestAudioFocus()) {
+            Log.w(TAG, "speak no audio focus");
             return -1;
         }
         /* 以下参数每次合成时都可以修改
@@ -328,6 +333,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
      */
     private List<Integer> batchSpeak(List<String> texts) {
         if(!hasAudioFocus && !requestAudioFocus()) {
+            Log.w(TAG, "speak no audio focus");
             return new ArrayList<>();
         }
         List<SpeechSynthesizeBag> bags = new ArrayList<>();
@@ -425,42 +431,60 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
 
     @Override
     public void onSynthesizeStart(String utteranceId) {
-        channel.invokeMethod("onSynthesizeStart", utteranceId == null ? 0 : Integer.parseInt(utteranceId));
+        if(enableLog) {
+            Log.d(TAG, "onSynthesizeStart utteranceId:" + utteranceId);
+        }
+        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeStart", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
     }
 
     @Override
     public void onSynthesizeDataArrived(String utteranceId, byte[] bytes, int progress) {
+        if(enableLog) {
+            Log.d(TAG, "onSynthesizeDataArrived utteranceId:" + utteranceId);
+        }
         if (notifyProgress) {
-            channel.invokeMethod("onSynthesizeDataArrived", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), progress});
+            registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeDataArrived", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), progress}));
         }
     }
 
     @Override
     public void onSynthesizeFinish(String utteranceId) {
-        channel.invokeMethod("onSynthesizeFinish", utteranceId == null ? 0 : Integer.parseInt(utteranceId));
+        if(enableLog) {
+            Log.d(TAG, "onSynthesizeFinish utteranceId:" + utteranceId);
+        }
+        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeFinish", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
     }
 
     @Override
     public void onSpeechStart(String utteranceId) {
-        channel.invokeMethod("onSpeechStart", utteranceId == null ? 0 : Integer.parseInt(utteranceId));
+        if(enableLog) {
+            Log.d(TAG, "onSpeechStart utteranceId:" + utteranceId);
+        }
+        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSpeechStart", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
     }
 
     @Override
     public void onSpeechProgressChanged(String utteranceId, int progress) {
+        if(enableLog) {
+            Log.d(TAG, "onSpeechProgressChanged utteranceId:" + utteranceId);
+        }
         if (notifyProgress) {
-            channel.invokeMethod("onSpeechProgressChanged", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), progress});
+            registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSpeechProgressChanged", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), progress}));
         }
     }
 
     @Override
     public void onSpeechFinish(String utteranceId) {
-        channel.invokeMethod("onSpeechFinish", utteranceId == null ? 0 : Integer.parseInt(utteranceId));
+        if(enableLog) {
+            Log.d(TAG, "onSpeechFinish utteranceId:" + utteranceId);
+        }
+        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSpeechFinish", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
     }
 
     @Override
     public void onError(String utteranceId, SpeechError speechError) {
         Log.e(TAG, "TTS error " + speechError);
-        channel.invokeMethod("onError", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), speechError.code});
+        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onError", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), speechError.code}));
     }
 
 //    private void prepareModels() {
