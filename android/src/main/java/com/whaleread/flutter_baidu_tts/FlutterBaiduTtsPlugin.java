@@ -98,8 +98,8 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
         switch(mode) {
             case "online":
                 return TtsMode.ONLINE;
-            case "offline":
-                return TtsMode.OFFLINE;
+//            case "offline":
+//                return TtsMode.OFFLINE;
             default:
                 return TtsMode.MIX;
         }
