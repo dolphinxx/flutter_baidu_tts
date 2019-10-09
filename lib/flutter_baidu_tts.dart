@@ -116,14 +116,14 @@ class FlutterBaiduTts {
   ///
   ///   - 度丫丫/情感童声 bd_etts_common_speech_as_mand_eng_high_am_v3.0.0_20170516.dat
   ///
-  /// [engineType] 合成引擎，`mix` or online, default 'mix'
+  /// [engineType] 合成引擎，`mix`, `online`, default 'mix'
   ///
   /// [notifyProgress] 是否通知合成及播放进度, default `true`
   ///
   /// [audioFocus] 是否请求安卓Audio Focus, default `true`
   static Future<dynamic> init(String appId, String appKey, String secretKey,
       String textModelPath, List<String> speechModelPath,
-      {String engineType: 'mix', bool notifyProgress: true, bool audioFocus: true,}) async {
+      {String engineType: 'mix', bool notifyProgress: true, bool audioFocus: true, bool enableLog: false}) async {
 //    if(defaultTargetPlatform == TargetPlatform.iOS) {
 //      textModelPath = textModelPath.substring(textModelPath.indexOf('baidu_tts'));
 //      speechModelPath = speechModelPath.map((p) => p.substring(p.indexOf('baidu_tts'))).toList();
@@ -137,6 +137,7 @@ class FlutterBaiduTts {
       "speechModelPath": speechModelPath,
       "notifyProgress": notifyProgress,
       "audioFocus": audioFocus,
+      "enableLog": enableLog,
     });
   }
 

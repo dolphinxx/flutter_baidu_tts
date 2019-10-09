@@ -166,7 +166,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
     }
     FlutterBaiduTts.ttsEventHandler = _handleTtsEvent;
     return FlutterBaiduTts.init(appId, appKey, secretKey, textModelPath, speechModelPath,
-        engineType: engineType);
+        engineType: engineType, enableLog: true);
   }
 
   void _handleTtsEvent(TtsEvent event, dynamic arguments) async {
