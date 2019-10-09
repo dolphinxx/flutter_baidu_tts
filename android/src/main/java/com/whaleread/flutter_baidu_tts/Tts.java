@@ -100,7 +100,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
                         .build();
             }
         }
-        LoggerProxy.printable(false);
+        LoggerProxy.printable(enableLog);
     }
 
     /**
