@@ -47,6 +47,4 @@ android {
 }
 
 dependencies {
-    implementation files('libs/com.baidu.tts_2.5.5.108.20190829_04f805c.jar')
-    implementation files('libs/cuid-mini-1.1.0.jar')
 }

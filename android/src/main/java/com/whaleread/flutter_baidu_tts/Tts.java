@@ -438,7 +438,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
     }
 
     @Override
-    public void onSynthesizeDataArrived(String utteranceId, byte[] bytes, int progress, int engineType) {
+    public void onSynthesizeDataArrived(String utteranceId, byte[] bytes, int progress) {
         if(enableLog) {
             Log.d(TAG, "onSynthesizeDataArrived utteranceId:" + utteranceId);
         }
