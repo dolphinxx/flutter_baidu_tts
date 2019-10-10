@@ -9,7 +9,7 @@ package com.baidu.tts.tools;
 
 import android.content.Context;
 import android.text.TextUtils;
-import com.baidu.tts.tools.DeviceId;
+//import com.baidu.tts.tools.DeviceId;
 
 public class CommonParam {
     private static final String a = CommonParam.class.getSimpleName();
