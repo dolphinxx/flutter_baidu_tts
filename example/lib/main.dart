@@ -36,10 +36,10 @@ class SpeakingWidget extends StatefulWidget {
 }
 
 class SpeakingWidgetState extends State<SpeakingWidget> {
-  TextEditingController _appIdController;
-  TextEditingController _appKeyController;
-  TextEditingController _secretKeyController;
-  TextEditingController _textController;
+  late TextEditingController _appIdController;
+  late TextEditingController _appKeyController;
+  late TextEditingController _secretKeyController;
+  late TextEditingController _textController;
 
   static const Map<String, String> offlineSpeakers = {
     '0': '普通女声',
@@ -70,24 +70,24 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
   int volume = 5;
   int pitch = 5;
 
-  List<String> texts;
-  int textIndex;
-  int beginPos;
-  int endPos;
+  List<String>? texts;
+  int? textIndex;
+  int? beginPos;
+  int? endPos;
 
   int speakingState = 0;
-  List<double> bufferPercents;
-  List<double> speakPercents;
-  bool appIdValid;
-  bool appKeyValid;
-  bool secretKeyValid;
+  List<double>? bufferPercents;
+  List<double>? speakPercents;
+  bool? appIdValid;
+  bool? appKeyValid;
+  bool? secretKeyValid;
 
-  String textModelPath;
-  List<String> speechModelPath;
-  String _textModelName;
-  List<String> _speechModelPaths;
+  late String textModelPath;
+  late List<String> speechModelPath;
+  late String _textModelName;
+  late List<String> _speechModelPaths;
 
-  List<int> _textIds;
+  List<int>? _textIds;
 
   @override
   void initState() {
@@ -95,8 +95,8 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
     _appIdController = TextEditingController();
     _appKeyController = TextEditingController();
     _secretKeyController = TextEditingController();
-    _speechModelPaths = List(4);
-    if(defaultTargetPlatform == TargetPlatform.iOS) {
+    _speechModelPaths = List.filled(4, '');
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
       _appIdController.text = iosAppId;
       _appKeyController.text = iosAppKey;
       _secretKeyController.text = iosSecretKey;
@@ -131,15 +131,11 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
     Directory directory = await getApplicationDocumentsDirectory();
     String basePath = '${directory.path}/baidu_tts';
     textModelPath = await copyAssetFile(basePath, _textModelName);
-    speechModelPath = List();
-    speechModelPath.add(await copyAssetFile(basePath,
-        _speechModelPaths[0]));
-    speechModelPath.add(await copyAssetFile(basePath,
-        _speechModelPaths[1]));
-    speechModelPath.add(await copyAssetFile(basePath,
-        _speechModelPaths[2]));
-    speechModelPath.add(await copyAssetFile(basePath,
-        _speechModelPaths[3]));
+    speechModelPath = [];
+    speechModelPath.add(await copyAssetFile(basePath, _speechModelPaths[0]));
+    speechModelPath.add(await copyAssetFile(basePath, _speechModelPaths[1]));
+    speechModelPath.add(await copyAssetFile(basePath, _speechModelPaths[2]));
+    speechModelPath.add(await copyAssetFile(basePath, _speechModelPaths[3]));
     print('-----------------------');
     print(textModelPath);
     print(speechModelPath.join('\n'));
@@ -152,21 +148,18 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
       await dest.delete();
     }
     await dest.create(recursive: true);
-    await dest.writeAsBytes(
-        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
+    await dest.writeAsBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
     bool fileExists = await dest.exists();
     print('---->$filename exists=$fileExists');
     return dest.path;
   }
 
-  Future<dynamic> initTts(
-      String appId, String appKey, String secretKey, String engineType) async {
+  Future<dynamic> initTts(String appId, String appKey, String secretKey, String engineType) async {
     if (engineType == 'mix') {
       await prepareModels();
     }
     FlutterBaiduTts.ttsEventHandler = _handleTtsEvent;
-    return FlutterBaiduTts.init(appId, appKey, secretKey, textModelPath, speechModelPath,
-        engineType: engineType, enableLog: true);
+    return FlutterBaiduTts.init(appId, appKey, secretKey, textModelPath, speechModelPath, engineType: engineType, enableLog: true);
   }
 
   void _handleTtsEvent(TtsEvent event, dynamic arguments) async {
@@ -181,10 +174,9 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
         });
         break;
       case TtsEvent.onSynthesizeDataArrived:
-        int textIndex = _textIds.indexOf(arguments[0]);
+        int textIndex = _textIds!.indexOf(arguments[0]);
         setState(() {
-          bufferPercents[textIndex] =
-              arguments[1] / this.texts[textIndex].length;
+          bufferPercents![textIndex] = arguments[1] / this.texts![textIndex].length;
         });
         break;
 //      case TtsEvent.onSynthesizeFinish:
@@ -193,27 +185,25 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
 //        });
 //        break;
       case TtsEvent.onSpeechProgressChanged:
-        int textIndex = _textIds.indexOf(arguments[0]);
+        int textIndex = _textIds!.indexOf(arguments[0]);
         setState(() {
-          speakPercents[textIndex] =
-              arguments[1] / this.texts[textIndex].length;
+          speakPercents![textIndex] = arguments[1] / this.texts![textIndex].length;
         });
         break;
       case TtsEvent.onSpeechStart:
         print('Tts event $event $arguments');
-        this.textIndex = _textIds.indexOf(arguments);
+        this.textIndex = _textIds!.indexOf(arguments);
         print(this.textIndex);
         setState(() {
           speakingState = 1;
           this.beginPos = this.endPos;
-          this.endPos += this.texts[this.textIndex].length;
+          this.endPos = this.endPos! + this.texts![this.textIndex!].length;
         });
-        _textController.selection =
-            TextSelection(baseOffset: beginPos, extentOffset: endPos);
+        _textController.selection = TextSelection(baseOffset: beginPos!, extentOffset: endPos!);
         break;
       case TtsEvent.onSpeechFinish:
         print('Tts event $event $arguments');
-        if (this.textIndex == this.texts.length - 1) {
+        if (this.textIndex == this.texts!.length - 1) {
           _resetProgress();
         }
         break;
@@ -251,9 +241,9 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
     });
   }
 
-  void _changeEngineType(String value) async {
+  void _changeEngineType(String? value) async {
     setState(() {
-      engineType = value;
+      engineType = value!;
     });
   }
 
@@ -276,18 +266,15 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
   }
 
   void startSpeaking() async {
-    if (FlutterBaiduTts == null) {
-      return;
-    }
     String texts = _textController.text;
-    if (texts != null && texts.isNotEmpty) {
+    if (texts.isNotEmpty) {
       this.texts = splitTexts(texts);
-      this.bufferPercents = List(this.texts.length);
-      this.speakPercents = List(this.texts.length);
+      this.bufferPercents = List.filled(this.texts!.length, 0);
+      this.speakPercents = List.filled(this.texts!.length, 0);
       this.textIndex = 0;
       this.beginPos = 0;
       this.endPos = 0;
-      _textIds = await FlutterBaiduTts.batchSpeak(this.texts);
+      _textIds = await FlutterBaiduTts.batchSpeak(this.texts!);
     }
   }
 
@@ -303,7 +290,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
   List<String> breakPunches = ['。', '！', '…', '？', '.', '?', '!', '\n'];
 
   List<String> splitTexts(String texts) {
-    List<String> result = List();
+    List<String> result = [];
     int startIndex = 0;
     bool breaking = false;
     for (int i = 0; i < texts.length; i++) {
@@ -328,17 +315,13 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
   Widget speakingBtn() {
     switch (speakingState) {
       case 0:
-        return IconButton(
-            icon: Icon(Icons.play_arrow), onPressed: () => startSpeaking());
+        return IconButton(icon: Icon(Icons.play_arrow), onPressed: () => startSpeaking());
       case 1:
-        return IconButton(
-            icon: Icon(Icons.pause), onPressed: () => pauseSpeaking());
+        return IconButton(icon: Icon(Icons.pause), onPressed: () => pauseSpeaking());
       case 2:
-        return IconButton(
-            icon: Icon(Icons.play_arrow), onPressed: () => resumeSpeaking());
+        return IconButton(icon: Icon(Icons.play_arrow), onPressed: () => resumeSpeaking());
       default:
-        return IconButton(
-            icon: Icon(Icons.play_arrow), onPressed: () => startSpeaking());
+        return IconButton(icon: Icon(Icons.play_arrow), onPressed: () => startSpeaking());
     }
   }
 
@@ -354,8 +337,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                 child: TextFormField(
                   decoration: InputDecoration(
                     hintText: 'AppId',
-                    errorText:
-                        appIdValid == true ? null : 'AppId must not be empty!',
+                    errorText: appIdValid == true ? null : 'AppId must not be empty!',
                   ),
                   controller: _appIdController,
                 ),
@@ -369,9 +351,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                 child: TextFormField(
                   decoration: InputDecoration(
                     hintText: 'AppKey',
-                    errorText: appKeyValid == true
-                        ? null
-                        : 'AppKey must not be empty!',
+                    errorText: appKeyValid == true ? null : 'AppKey must not be empty!',
                   ),
                   controller: _appKeyController,
                 ),
@@ -385,9 +365,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                 child: TextFormField(
                   decoration: InputDecoration(
                     hintText: 'SecretKey',
-                    errorText: secretKeyValid == true
-                        ? null
-                        : 'SecretKey must not be empty!',
+                    errorText: secretKeyValid == true ? null : 'SecretKey must not be empty!',
                   ),
                   controller: _secretKeyController,
                 ),
@@ -400,15 +378,13 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
               Expanded(
                 child: DropdownButton(
                   value: engineType,
-                  items: ['online', 'mix']
-                      .map((k) => DropdownMenuItem(value: k, child: Text(k)))
-                      .toList(),
+                  items: ['online', 'mix'].map((k) => DropdownMenuItem(value: k, child: Text(k))).toList(),
                   onChanged: _changeEngineType,
                 ),
               ),
             ],
           ),
-          RaisedButton(
+          ElevatedButton(
             onPressed: () {
               if (_appIdController.text.isEmpty) {
                 setState(() {
@@ -428,8 +404,7 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                 });
                 return;
               }
-              initTts(_appIdController.text, _appKeyController.text,
-                  _secretKeyController.text, engineType);
+              initTts(_appIdController.text, _appKeyController.text, _secretKeyController.text, engineType);
               setState(() {
                 appIdValid = true;
                 appKeyValid = true;
@@ -454,14 +429,11 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                         children: offlineSpeakers.keys
                             .map((k) => Container(
                                   decoration: BoxDecoration(
-                                    border: Border.all(
-                                        color: k == offlineSpeaker
-                                            ? Colors.deepOrange
-                                            : Colors.grey),
+                                    border: Border.all(color: k == offlineSpeaker ? Colors.deepOrange : Colors.grey),
                                   ),
-                                  child: RaisedButton(
+                                  child: ElevatedButton(
                                     onPressed: () => _setOfflineSpeaker(k),
-                                    child: Text(offlineSpeakers[k]),
+                                    child: Text(offlineSpeakers[k]!),
                                   ),
                                 ))
                             .toList()),
@@ -482,14 +454,11 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                         children: onlineSpeakers.keys
                             .map((k) => Container(
                                   decoration: BoxDecoration(
-                                    border: Border.all(
-                                        color: k == onlineSpeaker
-                                            ? Colors.deepOrange
-                                            : Colors.grey),
+                                    border: Border.all(color: k == onlineSpeaker ? Colors.deepOrange : Colors.grey),
                                   ),
-                                  child: RaisedButton(
+                                  child: ElevatedButton(
                                     onPressed: () => _setOnlineSpeaker(k),
-                                    child: Text(onlineSpeakers[k]),
+                                    child: Text(onlineSpeakers[k]!),
                                   ),
                                 ))
                             .toList()),
@@ -565,27 +534,21 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                     ? IconButton(icon: Icon(Icons.stop), onPressed: null)
                     : IconButton(
                         icon: Icon(Icons.stop),
-                        onPressed: () {
-                          FlutterBaiduTts.stop().then((_) => _resetProgress());
-                        },
+                        onPressed: () => FlutterBaiduTts.stop().then((_) => _resetProgress()),
                       ),
                 speakingBtn(),
               ],
             ),
           ),
-          bufferPercents == null
-              ? Container()
-              : Column(
-                  children: createProgresses(),
-                ),
+          bufferPercents == null ? Container() : Column(children: createProgresses()),
         ],
       ),
     );
   }
 
   List<Widget> createProgresses() {
-    List<Widget> result = List();
-    for (int i = 0; i < this.texts.length; i++) {
+    List<Widget> result = [];
+    for (int i = 0; i < this.texts!.length; i++) {
       result.add(Container(
         child: Row(
           children: <Widget>[
@@ -600,14 +563,14 @@ class SpeakingWidgetState extends State<SpeakingWidget> {
                   alignment: Alignment.centerLeft,
                   child: FractionallySizedBox(
                     heightFactor: 1,
-                    widthFactor: (bufferPercents[i] ?? 0),
+                    widthFactor: (bufferPercents![i]),
                     alignment: Alignment.centerLeft,
                     child: Container(
                       color: Colors.blueAccent,
                       alignment: Alignment.centerLeft,
                       child: FractionallySizedBox(
                         heightFactor: 1,
-                        widthFactor: (speakPercents[i] ?? 0),
+                        widthFactor: (speakPercents![i]),
                         alignment: Alignment.centerLeft,
                         child: Container(
                           color: Colors.deepOrangeAccent,

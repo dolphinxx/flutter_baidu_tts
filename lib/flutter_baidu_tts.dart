@@ -56,14 +56,14 @@ class FlutterBaiduTts {
   /// 同 MIX_MODE_DEFAULT。 但是连接百度服务器超时1.2s后，自动切换离线合成引擎
   static const String mixModeHighSpeedSynthesizeWifi = 'MIX_MODE_HIGH_SPEED_SYNTHESIZE_WIFI';
   static MethodChannel _channel = const MethodChannel('com.whaleread.flutter_baidu_tts')..setMethodCallHandler(_handleMethodCall);
-  static TtsEventHandler _ttsEventHandler;
+  static TtsEventHandler? _ttsEventHandler;
   static set ttsEventHandler(handler) => _ttsEventHandler = handler;
 
   static Future<void> _handleMethodCall(MethodCall call) async {
     if (_ttsEventHandler == null) {
       return;
     }
-    TtsEvent event;
+    late TtsEvent event;
     switch (call.method) {
       case 'onInitFailed':
         event = TtsEvent.onInitFailed;
@@ -99,7 +99,7 @@ class FlutterBaiduTts {
         event = TtsEvent.onError;
         break;
     }
-    _ttsEventHandler(event, call.arguments);
+    _ttsEventHandler!(event, call.arguments);
   }
 
   ///
@@ -155,12 +155,12 @@ class FlutterBaiduTts {
   /// [mixMode] 控制何种网络状况切换到离线。 SDK没有纯离线功能，强制在线优先。
   ///
   static Future<dynamic> setParams({
-    String onlineSpeaker,
-    String offlineSpeaker,
-    int speed,
-    int pitch,
-    int volume,
-    String mixMode,
+    String? onlineSpeaker,
+    String? offlineSpeaker,
+    int? speed,
+    int? pitch,
+    int? volume,
+    String? mixMode,
   }) async {
     Map<String, String> params = Map();
     if (onlineSpeaker != null) {
