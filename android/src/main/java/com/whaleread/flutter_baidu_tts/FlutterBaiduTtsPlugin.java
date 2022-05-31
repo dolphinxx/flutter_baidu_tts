@@ -2,18 +2,21 @@ package com.whaleread.flutter_baidu_tts;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import com.baidu.tts.client.TtsMode;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -24,43 +27,102 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 /**
  * FlutterBaiduTtsPlugin
  */
-public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
-    /**
-     * Plugin registration.
-     */
-    public static void registerWith(Registrar registrar) {
-        FlutterBaiduTtsPlugin instance = new FlutterBaiduTtsPlugin();
-        final MethodChannel channel = new MethodChannel(registrar.messenger(), "com.whaleread.flutter_baidu_tts");
-        channel.setMethodCallHandler(instance);
-        FlutterBaiduTtsPlugin.methodChannel = channel;
-        FlutterBaiduTtsPlugin.registrar = registrar;
-        registrar.addRequestPermissionsResultListener(instance);
-    }
-
-    private static Registrar registrar;
-    private static Tts tts;
-    private static MethodChannel methodChannel;
-    private static String appId;
-    private static String appKey;
-    private static String secretKey;
+public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.RequestPermissionsResultListener, FlutterPlugin, ActivityAware, ActivityProvider {
+    private Tts tts;
+    private MethodChannel methodChannel;
+    private String appId;
+    private String appKey;
+    private String secretKey;
     /**
      * online, mix
      */
-    private static String engineType;
-    private static String textModelPath;
-    private static List<String> speechModelPath;
-    private static boolean notifyProgress;
-    private static boolean audioFocus;
-    private static boolean enableLog;
+    private String engineType;
+    private String textModelPath;
+    private List<String> speechModelPath;
+    private boolean notifyProgress;
+    private boolean audioFocus;
+    private boolean enableLog;
+    private int permRequestCode;
+
+    private Registrar registrar;
+    private ActivityPluginBinding activityPluginBinding;
+
+    /**
+     * Plugin registration. For only pre 1.12
+     */
+    @Deprecated
+    public static void registerWith(Registrar registrar) {
+        FlutterBaiduTtsPlugin instance = new FlutterBaiduTtsPlugin();
+        instance.init(registrar.messenger());
+        instance.registrar = registrar;
+        registrar.addRequestPermissionsResultListener(instance);
+    }
+
+    private void init(BinaryMessenger messenger) {
+        final MethodChannel channel = new MethodChannel(messenger, "com.whaleread.flutter_baidu_tts");
+        channel.setMethodCallHandler(this);
+        this.methodChannel = channel;
+    }
+
+    private void attachToActivity(ActivityPluginBinding activityPluginBinding) {
+        this.activityPluginBinding = activityPluginBinding;
+        activityPluginBinding.addRequestPermissionsResultListener(this);
+    }
+
+    private void detachToActivity() {
+        if(activityPluginBinding != null) {
+            activityPluginBinding.removeRequestPermissionsResultListener(this);
+        }
+        this.activityPluginBinding = null;
+    }
 
     @Override
-    public void onMethodCall(MethodCall call, Result result) {
+    public Activity getActivity() {
+        if(registrar != null) {
+            return registrar.activity();
+        }
+        return activityPluginBinding == null ? null : activityPluginBinding.getActivity();
+    }
+
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+        init(binding.getBinaryMessenger());
+    }
+
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+        methodChannel.setMethodCallHandler(null);
+        methodChannel = null;
+    }
+
+    @Override
+    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+        attachToActivity(binding);
+    }
+
+    @Override
+    public void onDetachedFromActivityForConfigChanges() {
+        detachToActivity();
+    }
+
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+        attachToActivity(binding);
+    }
+
+    @Override
+    public void onDetachedFromActivity() {
+        detachToActivity();
+    }
+
+    @Override
+    public void onMethodCall(MethodCall call, @NonNull Result result) {
         if (call.method.equals("init")) {
             if (tts != null) {
                 tts.destroy();
             }
             if(call.hasArgument("enableLog")) {
-                enableLog = call.argument("enableLog");
+                enableLog = Boolean.TRUE.equals(call.argument("enableLog"));
             }
             appId = call.argument("appId");
             appKey = call.argument("appKey");
@@ -88,25 +150,22 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
                 return;
             }
             if (tts == null) {
-                throw new IllegalStateException("TTS not initialized!");
+                result.error("failed", "TTS not initialized!", null);
+                return;
             }
             tts.onMethodCall(call, result);
         }
     }
 
     private static TtsMode parseTtsMode(String mode) {
-        switch(mode) {
-            case "online":
-                return TtsMode.ONLINE;
-//            case "offline":
-//                return TtsMode.OFFLINE;
-            default:
-                return TtsMode.MIX;
+        if ("online".equals(mode)) {
+            return TtsMode.ONLINE;
         }
+        return TtsMode.MIX;
     }
 
     private void initTts() {
-        tts = new Tts(registrar, methodChannel, parseTtsMode(engineType), textModelPath, speechModelPath, notifyProgress, audioFocus, enableLog);
+        tts = new Tts(this, methodChannel, parseTtsMode(engineType), textModelPath, speechModelPath, notifyProgress, audioFocus, enableLog);
         tts.init(appId, appKey, secretKey);
     }
 
@@ -126,7 +185,7 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
         ArrayList<String> toApplyList = new ArrayList<>();
 
         for (String perm : permissions) {
-            if (PackageManager.PERMISSION_GRANTED != registrar.context().checkSelfPermission(perm)) {
+            if (PackageManager.PERMISSION_GRANTED != getActivity().checkSelfPermission(perm)) {
                 toApplyList.add(perm);
                 // 进入到这里代表没有权限.
             }
@@ -135,12 +194,9 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
         if (toApplyList.isEmpty()) {
             initTts();
         } else {
-            _requestCode = Integer.parseInt(new SimpleDateFormat("MMddHHmmss", Locale.CHINA).format(new Date()));
-            registrar.activity().requestPermissions(toApplyList.toArray(lackPermissions), _requestCode);
+            getActivity().requestPermissions(toApplyList.toArray(lackPermissions), permRequestCode);
         }
     }
-
-    private int _requestCode;
 
     private boolean hasAllPermissionsGranted(int[] grantResults) {
         for (int grantResult : grantResults) {
@@ -153,8 +209,8 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
 
     @Override
     public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-		Log.d("FlutterBaiduTtsPlugin", "onRequestPermissionsResult " + requestCode);
-        if (requestCode == _requestCode) {
+        Log.d("FlutterBaiduTtsPlugin", "onRequestPermissionsResult " + requestCode);
+        if (requestCode == permRequestCode) {
             if(hasAllPermissionsGranted(grantResults)) {
                 initTts();
             } else {

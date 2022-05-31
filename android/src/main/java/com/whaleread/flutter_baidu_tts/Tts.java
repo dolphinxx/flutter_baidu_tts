@@ -7,6 +7,7 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import com.baidu.tts.auth.AuthInfo;
 import com.baidu.tts.chainofresponsibility.logger.LoggerProxy;
 import com.baidu.tts.client.SpeechError;
@@ -22,7 +23,6 @@ import java.util.Map;
 
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.PluginRegistry;
 
 public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerListener {
     private static final String TAG = "[BAIDU TTS]";
@@ -37,23 +37,23 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
 //        MODEL_FILENAMES.put("4", "bd_etts_common_speech_as_mand_eng_high_am_v3.0.0_20170516.dat");
 //    }
 
-    private String textFile;
-    private List<String> speechModelFiles;
-    private TtsMode ttsMode;
-    private PluginRegistry.Registrar registrar;
-    private MethodChannel channel;
-    private boolean notifyProgress;
+    private final ActivityProvider activityProvider;
+    private final String textFile;
+    private final List<String> speechModelFiles;
+    private final TtsMode ttsMode;
+    private final MethodChannel channel;
+    private final boolean notifyProgress;
 
-    private boolean audioFocus;
+    private final boolean audioFocus;
     private AudioManager audioManager;
     private AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener;
     private AudioAttributes audioAttributes;
     private boolean autoResume = false;
     private boolean hasAudioFocus = false;
-    private boolean enableLog;
+    private final boolean enableLog;
 
-    Tts(PluginRegistry.Registrar registrar, MethodChannel channel, TtsMode ttsMode, String textFile, List<String> speechModelFiles, boolean notifyProgress, boolean audioFocus, boolean enableLog) {
-        this.registrar = registrar;
+    Tts(ActivityProvider activityProvider, MethodChannel channel, TtsMode ttsMode, String textFile, List<String> speechModelFiles, boolean notifyProgress, boolean audioFocus, boolean enableLog) {
+        this.activityProvider = activityProvider;
         this.channel = channel;
         this.ttsMode = ttsMode;
         this.notifyProgress = notifyProgress;
@@ -62,7 +62,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
         this.audioFocus = audioFocus;
         this.enableLog = enableLog;
         if (audioFocus) {
-            audioManager = (AudioManager) registrar.context().getSystemService(Context.AUDIO_SERVICE);
+            audioManager = (AudioManager) activityProvider.getActivity().getSystemService(Context.AUDIO_SERVICE);
             onAudioFocusChangeListener = focusChange -> {
                 switch (focusChange) {
                     case AudioManager.AUDIOFOCUS_GAIN:
@@ -82,10 +82,6 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
                         hasAudioFocus = false;
                         break;
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                        _pause();
-                        autoResume = true;
-                        hasAudioFocus = false;
-                        break;
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                         _pause();
                         autoResume = true;
@@ -109,7 +105,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
     void init(String appId, String appKey, String secretKey) {
 
         mSpeechSynthesizer = SpeechSynthesizer.getInstance();
-        mSpeechSynthesizer.setContext(registrar.context());
+        mSpeechSynthesizer.setContext(activityProvider.getActivity());
         mSpeechSynthesizer.setSpeechSynthesizerListener(this);
 
 
@@ -186,7 +182,6 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
                         mSpeechSynthesizer.setParam(SpeechSynthesizer.PARAM_SPEAKER, params.get("onlineSpeaker"));
                         break;
                     case "offlineSpeaker":
-                        //noinspection ConstantConditions
                         loadModel(Integer.parseInt(params.get("offlineSpeaker")));
                         break;
                     case "volume":
@@ -200,7 +195,6 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
                         break;
                     case "mixMode":
                         String mixMode;
-                        //noinspection ConstantConditions
                         switch (params.get("mixMode")) {
                             case "MIX_MODE_HIGH_SPEED_NETWORK":
                                 mixMode = SpeechSynthesizer.MIX_MODE_HIGH_SPEED_NETWORK;
@@ -397,7 +391,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
     }
 
     @Override
-    public void onMethodCall(MethodCall methodCall, MethodChannel.Result result) {
+    public void onMethodCall(MethodCall methodCall, @NonNull MethodChannel.Result result) {
         switch (methodCall.method) {
             case "speak":
                 result.success(speak((String) methodCall.arguments));
@@ -434,7 +428,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
         if(enableLog) {
             Log.d(TAG, "onSynthesizeStart utteranceId:" + utteranceId);
         }
-        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeStart", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
+        activityProvider.getActivity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeStart", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
     }
 
     @Override
@@ -443,7 +437,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
             Log.d(TAG, "onSynthesizeDataArrived utteranceId:" + utteranceId);
         }
         if (notifyProgress) {
-            registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeDataArrived", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), progress}));
+            activityProvider.getActivity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeDataArrived", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), progress}));
         }
     }
 
@@ -452,7 +446,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
         if(enableLog) {
             Log.d(TAG, "onSynthesizeFinish utteranceId:" + utteranceId);
         }
-        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeFinish", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
+        activityProvider.getActivity().runOnUiThread(() -> channel.invokeMethod("onSynthesizeFinish", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
     }
 
     @Override
@@ -460,7 +454,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
         if(enableLog) {
             Log.d(TAG, "onSpeechStart utteranceId:" + utteranceId);
         }
-        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSpeechStart", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
+        activityProvider.getActivity().runOnUiThread(() -> channel.invokeMethod("onSpeechStart", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
     }
 
     @Override
@@ -469,7 +463,7 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
             Log.d(TAG, "onSpeechProgressChanged utteranceId:" + utteranceId);
         }
         if (notifyProgress) {
-            registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSpeechProgressChanged", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), progress}));
+            activityProvider.getActivity().runOnUiThread(() -> channel.invokeMethod("onSpeechProgressChanged", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), progress}));
         }
     }
 
@@ -478,13 +472,13 @@ public class Tts implements MethodChannel.MethodCallHandler, SpeechSynthesizerLi
         if(enableLog) {
             Log.d(TAG, "onSpeechFinish utteranceId:" + utteranceId);
         }
-        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onSpeechFinish", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
+        activityProvider.getActivity().runOnUiThread(() -> channel.invokeMethod("onSpeechFinish", utteranceId == null ? 0 : Integer.parseInt(utteranceId)));
     }
 
     @Override
     public void onError(String utteranceId, SpeechError speechError) {
         Log.e(TAG, "TTS error " + speechError);
-        registrar.activity().runOnUiThread(() -> channel.invokeMethod("onError", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), speechError.code}));
+        activityProvider.getActivity().runOnUiThread(() -> channel.invokeMethod("onError", new int[]{utteranceId == null ? 0 : Integer.parseInt(utteranceId), speechError.code}));
     }
 
 //    private void prepareModels() {
