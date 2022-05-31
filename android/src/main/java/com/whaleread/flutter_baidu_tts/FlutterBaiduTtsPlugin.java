@@ -134,6 +134,7 @@ public class FlutterBaiduTtsPlugin implements MethodCallHandler, PluginRegistry.
             notifyProgress = call.argument("notifyProgress");
             //noinspection ConstantConditions
             audioFocus = call.argument("audioFocus");
+            permRequestCode = call.hasArgument("permRequestCode") ? call.argument("permRequestCode") : 9527001;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 checkPermission();
             } else {

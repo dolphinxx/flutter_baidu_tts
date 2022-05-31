@@ -121,9 +121,11 @@ class FlutterBaiduTts {
   /// [notifyProgress] 是否通知合成及播放进度, default `true`
   ///
   /// [audioFocus] 是否请求安卓Audio Focus, default `true`
+  ///
+  /// 对于Android, 可以使用自己的[permRequestCode]以避免和其它插件冲突
   static Future<dynamic> init(String appId, String appKey, String secretKey,
       String textModelPath, List<String> speechModelPath,
-      {String engineType: 'mix', bool notifyProgress: true, bool audioFocus: true, bool enableLog: false}) async {
+      {String engineType: 'mix', bool notifyProgress: true, bool audioFocus: true, bool enableLog: false, int? permRequestCode}) async {
 //    if(defaultTargetPlatform == TargetPlatform.iOS) {
 //      textModelPath = textModelPath.substring(textModelPath.indexOf('baidu_tts'));
 //      speechModelPath = speechModelPath.map((p) => p.substring(p.indexOf('baidu_tts'))).toList();
@@ -138,6 +140,7 @@ class FlutterBaiduTts {
       "notifyProgress": notifyProgress,
       "audioFocus": audioFocus,
       "enableLog": enableLog,
+      if(permRequestCode != null) "permRequestCode": permRequestCode
     });
   }
 
